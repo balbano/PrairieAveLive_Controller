@@ -28,8 +28,15 @@
 int panel[STRIPS_PER_PANEL][LEDS_PER_STRIP];
 int panelBuffer[STRIPS_PER_PANEL][LEDS_PER_STRIP];
 
+// Audio node setup 
+int audioNodes[][2] = {{2, 4}, {4, 7}};
+int audioColors[] = {0x2288FF, 0xFF4444};
+float audioScalingFactors[] = {1., 1.};
+float levels[2];
+const int NUMBER_OF_NODES = 2;
+
 // Framerate setup
-const float FPS = 2;
+const float FPS = 12;
 const float frameLength = 1000 / FPS;
 unsigned long previousFrameTime;
 
@@ -46,29 +53,38 @@ XBeeResponse response = XBeeResponse();
 // create reusable response objects for responses we expect to handle 
 ZBRxResponse rx = ZBRxResponse();
 ModemStatusResponse msr = ModemStatusResponse();
-int volume;
+int currentVolume = 0;
+int maxVolume = 0;
 
 void setup() {
   leds.begin();
   leds.show();
   
   // start serial
+  Serial.begin(9600);
   Serial1.begin(9600);
   xbee.setSerial(Serial1);
   
-  randomSeed(analogRead(0));
-  initializeWithRandomColors(panel);
+  //randomSeed(analogRead(0));
+  //initializeWithRandomColors(panel);
   
   previousFrameTime = millis();
 }
 
 void loop() {
-  listen();
-  leds.setPixel(2*LEDS_PER_STRIP + 3, volume);
-  leds.show();
+  currentVolume = listen();
+  if (currentVolume > maxVolume){
+    maxVolume = currentVolume;
+  } 
   if ((millis() - previousFrameTime) > frameLength){
     previousFrameTime = millis();
     iterateGameOfLife(panel, panelBuffer);
+    levels[0] = float(maxVolume);
+    levels[1] = float(maxVolume/2.0);
+    // killAllCells(panel);
+    birthCellsFromAudio(panel, levels, audioNodes, audioColors, audioScalingFactors, NUMBER_OF_NODES);
     setAllPixels(panel);
+    leds.show();
+    maxVolume = 0;
   }
 }

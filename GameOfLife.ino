@@ -33,9 +33,10 @@ void iterateGameOfLife(int cells[STRIPS_PER_PANEL][LEDS_PER_STRIP], int cellsBuf
       // Birth cells with 3 neighbors. Make them the average of their neighbors colors.
       else {
         if (neighbors == 3) {
-          int avgRed = neighborsRedSum / neighbors;
-          int avgGreen = neighborsGreenSum / neighbors;
-          int avgBlue = neighborsBlueSum / neighbors;
+          neighbors += 1; // Make GoL births dacay in britness.
+          int avgRed = neighborsRedSum/neighbors;
+          int avgGreen = neighborsGreenSum/neighbors;
+          int avgBlue = neighborsBlueSum/neighbors;
           cells[y][x] = RGBToHex(avgRed, avgGreen, avgBlue);
         }
       }

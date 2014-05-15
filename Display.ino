@@ -13,6 +13,15 @@ void initializeWithRandomColors(int cells[STRIPS_PER_PANEL][LEDS_PER_STRIP])
   }
 }
 
+void killAllCells(int cells[STRIPS_PER_PANEL][LEDS_PER_STRIP])
+{
+  for (int y = 0; y < STRIPS_PER_PANEL; y++){
+    for(int x = 0; x < LEDS_PER_STRIP; x++){
+      cells[y][x] = 0;
+    }
+  }
+}
+
 
 void setAllPixels(int cells[STRIPS_PER_PANEL][LEDS_PER_STRIP])
 {
