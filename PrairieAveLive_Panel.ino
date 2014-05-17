@@ -29,11 +29,11 @@ int panel[STRIPS_PER_PANEL][LEDS_PER_STRIP];
 int panelBuffer[STRIPS_PER_PANEL][LEDS_PER_STRIP];
 
 // Audio node setup 
-int audioNodes[][2] = {{2, 4}, {4, 7}};
-int audioColors[] = {0x2288FF, 0xFF4444};
-float audioScalingFactors[] = {1., 1.};
-float levels[2];
-const int NUMBER_OF_NODES = 2;
+int audioNodes[][2] = {{2, 4}};
+int audioColors[] = {0xFF4444};
+float audioScalingFactors[] = {2.};
+float levels[1];
+const int NUMBER_OF_NODES = 1;
 
 // Framerate setup
 const float FPS = 12;
@@ -80,7 +80,6 @@ void loop() {
     previousFrameTime = millis();
     iterateGameOfLife(panel, panelBuffer);
     levels[0] = float(maxVolume);
-    levels[1] = float(maxVolume/2.0);
     // killAllCells(panel);
     birthCellsFromAudio(panel, levels, audioNodes, audioColors, audioScalingFactors, NUMBER_OF_NODES);
     setAllPixels(panel);
