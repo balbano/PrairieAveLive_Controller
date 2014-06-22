@@ -1,4 +1,4 @@
-int listen()
+void getXBeeDataAndSet(int volumes[])
 {
   xbee.readPacket();
   if (xbee.getResponse().isAvailable()) {
@@ -12,23 +12,33 @@ int listen()
 
       if (rx.getOption() == ZB_PACKET_ACKNOWLEDGED) {
         // the sender got an ACK
-        //Serial.println("Packet acknowledged");
+        Serial.println("Packet acknowledged");
       } 
       else {
         // we got it (obviously) but sender didn't get an ACK
         Serial.println("Packet not acknowledged");
       }
-      /*
+      
+      int msb = rx.getRemoteAddress64().getMsb();
+      int lsb = rx.getRemoteAddress64().getLsb();
       Serial.print("Remote Address MSB: ");
-      Serial.println(rx.getRemoteAddress64().getMsb(), HEX);
+      Serial.println(msb, HEX);
       Serial.print("Remote Address lSB: ");
-      Serial.println(rx.getRemoteAddress64().getLsb(), HEX);
+      Serial.println(lsb, HEX);
       Serial.print("Data: ");
       Serial.println(rx.getData(0));
-      */
-      return rx.getData(0);
       
-    } 
+      for (int i = 0; i < NUMBER_OF_NODES; i++) {
+        if (msb == nodeAddresses[i][0] && lsb == nodeAddresses[i][1]) {
+          volumes[i] = rx.getData(0);
+        }
+      }
+
+      radioFPS = 1000.0 / (millis() - previousPacketTime);
+      Serial.print("Radio FPS: ");
+      Serial.println(radioFPS);
+      previousPacketTime = millis();
+    }
     else if (xbee.getResponse().getApiId() == MODEM_STATUS_RESPONSE) {
       xbee.getResponse().getModemStatusResponse(msr);
       // the local XBee sends this response on certain events, like association/dissociation
@@ -56,5 +66,7 @@ int listen()
     Serial.print("oh no!!! error code:");
     Serial.println(xbee.getResponse().getErrorCode());
   }
-  
+  else {
+    // Serial.println("No packet available.");
+  }
 }

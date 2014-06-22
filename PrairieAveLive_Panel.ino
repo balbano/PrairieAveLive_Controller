@@ -22,23 +22,29 @@
 #include <XBee.h>
 
 // Panel setup.
-#define LEDS_PER_STRIP 11
+#define LEDS_PER_STRIP 66
 #define STRIPS_PER_PANEL 7
 
 int panel[STRIPS_PER_PANEL][LEDS_PER_STRIP];
 int panelBuffer[STRIPS_PER_PANEL][LEDS_PER_STRIP];
 
 // Audio node setup 
-int audioNodes[][2] = {{2, 4}};
-int audioColors[] = {0xFF4444};
-float audioScalingFactors[] = {2.};
-float levels[1];
-const int NUMBER_OF_NODES = 1;
+int audioNodes[][2] = {{2, 6}, {4, 14}};
+int nodeAddresses[][2] = {{0x13A200, 0x40ACB022}, {0x13A200, 0x40AE998C}};
+int audioColors[] = {0xFF44FF, 0x44FFFF};
+int currentVolumes[] = {0, 0};
+int maxVolumes[] = {0, 0};
+float audioScalingFactors[] = {2., 2.};
+float levels[2];
+const int NUMBER_OF_NODES = 2;
+
 
 // Framerate setup
 const float FPS = 12;
 const float frameLength = 1000 / FPS;
 unsigned long previousFrameTime;
+float radioFPS;
+unsigned long previousPacketTime;
 
 // OCTOWS2811 setup
 DMAMEM int displayMemory[LEDS_PER_STRIP*6];
@@ -53,8 +59,7 @@ XBeeResponse response = XBeeResponse();
 // create reusable response objects for responses we expect to handle 
 ZBRxResponse rx = ZBRxResponse();
 ModemStatusResponse msr = ModemStatusResponse();
-int currentVolume = 0;
-int maxVolume = 0;
+
 
 void setup() {
   leds.begin();
@@ -69,21 +74,34 @@ void setup() {
   //initializeWithRandomColors(panel);
   
   previousFrameTime = millis();
+  
+  previousPacketTime = millis();
 }
 
 void loop() {
-  currentVolume = listen();
-  if (currentVolume > maxVolume){
-    maxVolume = currentVolume;
-  } 
+  getXBeeDataAndSet(currentVolumes);
+  // Serial.print("Current volume:");
+  // Serial.println(currentVolume);
+  for (int i = 0; i < NUMBER_OF_NODES; i++) {
+    if (currentVolumes[i] > maxVolumes[i]){
+      maxVolumes[i] = currentVolumes[i];
+    } 
+  }
+  // Serial.print("Max volume:");
+  // Serial.println(maxVolume);
   if ((millis() - previousFrameTime) > frameLength){
     previousFrameTime = millis();
     iterateGameOfLife(panel, panelBuffer);
-    levels[0] = float(maxVolume);
+    for (int i = 0; i < NUMBER_OF_NODES; i++) {
+      levels[i] = float(maxVolumes[i]);
+    }
     // killAllCells(panel);
     birthCellsFromAudio(panel, levels, audioNodes, audioColors, audioScalingFactors, NUMBER_OF_NODES);
     setAllPixels(panel);
     leds.show();
-    maxVolume = 0;
+    for (int i = 0; i < NUMBER_OF_NODES; i++) {
+      maxVolumes[i] = 0;
+    }
+    Serial.println("GoL iterated!");
   }
 }

@@ -32,7 +32,7 @@ void birthCellsFromAudio(int cells[STRIPS_PER_PANEL][LEDS_PER_STRIP], float leve
       nodeRed = constrain(nodeRed, 0, 255);
       nodeGreen = constrain(nodeGreen, 0, 255);
       nodeBlue = constrain(nodeBlue, 0, 255);
-      if ((random(64) < level) || isNode) {
+      if ((random(128) < level) || isNode) {
         cells[y][x] = RGBToHex(nodeRed, nodeGreen, nodeBlue);
       }
     }
