@@ -87,6 +87,7 @@ void setup() {
   //initializeWithRandomColors(panel);
   
   previousFrameTime = millis();
+  prevReportTime = millis();
   
   // previousPacketTime = millis();
 }
