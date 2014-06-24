@@ -29,12 +29,12 @@ int panel[STRIPS_PER_PANEL][LEDS_PER_STRIP];
 int panelBuffer[STRIPS_PER_PANEL][LEDS_PER_STRIP];
 
 // Audio node setup 
-int audioNodes[][2] = {{1, 27}, {1, 38},   // Interior mics.
-                       {1, 49}, {1, 60}}; // Exterior mics.
+int audioNodes[][2] = {{2, 4}, {2, 11},   // Interior mics.
+                       {2, 21}, {2, 30}}; // Exterior mics.
 int interiorAddresses[][2] = {{0x13A200, 0x40ACB022}, {0x13A200, 0x40AE998C}};
 int exteriorAddress[] = {0x13A200, 0x40ACB3EC};
-int audioColors[] = {0xFF44FF, 0x44FFFF,  // Interior mics.
-                     0xFFFF44, 0x4444FF}; // Exterior mics.
+int audioColors[] = {0xFF00FF, 0x00FFFF,  // Interior mics.
+                     0xFFFF00, 0x00FF00}; // Exterior mics.
 int currentVolumes[] = {0, 0, 0, 0};
 int maxVolumes[] = {0, 0, 0, 0};
 float audioScalingFactors[] = {2., 2.,    // Interior mics.
@@ -51,7 +51,7 @@ const float frameLength = 1000 / FPS;
 unsigned long previousFrameTime;
 // float radioFPS;
 // unsigned long previousPacketTime;
-int packetsRead = 0;
+
 
 // OCTOWS2811 setup
 DMAMEM int displayMemory[LEDS_PER_STRIP*6];
@@ -66,6 +66,13 @@ XBeeResponse response = XBeeResponse();
 // create reusable response objects for responses we expect to handle 
 ZBRxResponse rx = ZBRxResponse();
 ModemStatusResponse msr = ModemStatusResponse();
+
+// REPORTING
+const int timeBetweenReports = 1000; // Report once per second.
+unsigned long prevReportTime;
+int numberOfPacketsRead = 0;
+int numberOfErrors = 0;
+int numberOfAttemptsToReadEmptyBuffer = 0;
 
 void setup() {
   leds.begin();
@@ -94,14 +101,7 @@ void loop() {
   // Serial.print("Max volume:");
   // Serial.println(maxVolume);
   if ((millis() - previousFrameTime) > frameLength){
-    float packetsPerSecond = 1000.0 * float(packetsRead) / (millis() - previousFrameTime);
     previousFrameTime = millis();
-
-    Serial.print("Packets read: ");
-    Serial.println(packetsRead);
-    Serial.print("Packets per second: ");
-    Serial.println(packetsPerSecond);
-    packetsRead = 0;
         
     iterateGameOfLife(panel, panelBuffer);
     for (int i = 0; i < numberOfNodes; i++) {
@@ -115,5 +115,18 @@ void loop() {
       maxVolumes[i] = 0;
     }
     // Serial.println("GoL iterated!");
+  }
+  
+  if (millis() - prevReportTime > timeBetweenReports) {
+    prevReportTime = millis();
+    Serial.print("Packets read: ");
+    Serial.print(numberOfPacketsRead);
+    Serial.print("; Errors: ");
+    Serial.print(numberOfErrors);
+    Serial.print("; Attempts to read empty buffer: ");
+    Serial.println(numberOfAttemptsToReadEmptyBuffer);
+    numberOfPacketsRead = 0;
+    numberOfErrors = 0;
+    numberOfAttemptsToReadEmptyBuffer = 0;
   }
 }

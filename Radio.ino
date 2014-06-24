@@ -2,7 +2,7 @@ void getXBeeDataAndSet(int volumes[])
 {
   xbee.readPacket();
   if (xbee.getResponse().isAvailable()) {
-    packetsRead++; // Count the packets read each frame.
+    numberOfPacketsRead++; // Count the packets read each frame.
     // got something
 
     if (xbee.getResponse().getApiId() == ZB_RX_RESPONSE) {
@@ -17,7 +17,7 @@ void getXBeeDataAndSet(int volumes[])
       } 
       else {
         // we got it (obviously) but sender didn't get an ACK
-        Serial.println("Packet not acknowledged");
+        // Serial.println("Packet not acknowledged");
       }
       
       int msb = rx.getRemoteAddress64().getMsb();
@@ -71,12 +71,14 @@ void getXBeeDataAndSet(int volumes[])
 
   } 
   else if (xbee.getResponse().isError()) {
+    numberOfErrors++;
     /*
     Serial.print("oh no!!! error code:");
     Serial.println(xbee.getResponse().getErrorCode());
     */
   }
   else {
+    numberOfAttemptsToReadEmptyBuffer++;
     // Serial.println("No packet available.");
   }
 }
