@@ -34,6 +34,7 @@
 #include <XBee.h>
 
 // Panel setup.
+// Use define to allow use in array initialization.
 #define LEDS_PER_STRIP 66
 #define STRIPS_PER_PANEL 7
 
@@ -41,21 +42,24 @@ int panel[STRIPS_PER_PANEL][LEDS_PER_STRIP];
 int panelBuffer[STRIPS_PER_PANEL][LEDS_PER_STRIP];
 
 // Audio node setup 
-int audioNodes[][2] = {{2, 4}, {2, 11},   // Interior mics.
-                       {2, 21}, {2, 30}}; // Exterior mics.
-int interiorAddresses[][2] = {{0x13A200, 0x40ACB022}, {0x13A200, 0x40AE998C}};
-int exteriorAddress[] = {0x13A200, 0x40ACB3EC};
-int audioColors[] = {0xFF00FF, 0x00FFFF,  // Interior mics.
-                     0xFFFF00, 0x00FF00}; // Exterior mics.
-int currentVolumes[] = {0, 0, 0, 0};
-int maxVolumes[] = {0, 0, 0, 0};
-float audioScalingFactors[] = {2., 2.,    // Interior mics.
-                               2., 2.};   // Exterior mics.
-float levels[4];
+const int numberOfInteriorMotes = 2; // Each interior mote has 1 mic.
+const int numberOfExteriorMics = 2; // The single exterior mote has multiple mics.
+const int numberOfNodes = numberOfInteriorMotes + numberOfExteriorMics;
 
-const int numberOfNodes = 4;
-const int numberOfInteriorFios = 2;
-const int numberOfExteriorMics = 2;
+int interiorMoteAddresses[][2] = {{0x13A200, 0x40ACB022}, {0x13A200, 0x40AE998C}};
+int exteriorMoteAddress[] = {0x13A200, 0x40ACB3EC};
+
+// The node coords for the interior mics match the indexing of the interior mote
+// addresses. The node coords of the exterior mics are offset by the number of 
+// interior motes.
+//                           |Interior Motes/Mics |Exterior Mics       |
+//                           |--------------------|--------------------|
+int nodeCoordinates[][2]    = {{2, 4},   {2, 11},  {2, 21},  {2, 30}};
+int nodeColors[]            = {0xFF00FF, 0x00FFFF, 0xFFFF00, 0x00FF00};
+float audioScalingFactors[] = {2.,       2.,       2.,       2.};
+
+int maxVolumes[numberOfNodes];
+float levels[numberOfNodes];
 
 // Framerate setup
 const float FPS = 12;
@@ -102,15 +106,14 @@ void setup() {
   prevReportTime = millis();
   
   // previousPacketTime = millis();
+  
+  for (int i = 0; i < numberOfNodes; i++) {
+    maxVolumes[i] = 0;
+  }
 }
 
 void loop() {
-  getXBeeDataAndSet(currentVolumes);
-  for (int i = 0; i < numberOfNodes; i++) {
-    if (currentVolumes[i] > maxVolumes[i]){
-      maxVolumes[i] = currentVolumes[i];
-    } 
-  }
+  getXBeeDataAndSet(maxVolumes);
   // Serial.print("Max volume:");
   // Serial.println(maxVolume);
   if ((millis() - previousFrameTime) > frameLength){
@@ -121,7 +124,7 @@ void loop() {
       levels[i] = float(maxVolumes[i]);
     }
     // killAllCells(panel);
-    birthCellsFromAudio(panel, levels, audioNodes, audioColors, audioScalingFactors, numberOfNodes);
+    birthCellsFromAudio(panel, levels, nodeCoordinates, nodeColors, audioScalingFactors, numberOfNodes);
     setAllPixels(panel);
     leds.show();
     for (int i = 0; i < numberOfNodes; i++) {

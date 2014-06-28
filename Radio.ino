@@ -30,15 +30,20 @@ void getXBeeDataAndSet(int volumes[])
       Serial.print("Data: ");
       Serial.println(rx.getData()[0]);
       */
-      for (int i = 0; i < numberOfInteriorFios; i++) {
-        if (msb == interiorAddresses[i][0] && lsb == interiorAddresses[i][1]) {
-          volumes[i] = rx.getData()[0];
+      for (int i = 0; i < numberOfInteriorMotes; i++) {
+        if (msb == interiorMoteAddresses[i][0] && lsb == interiorMoteAddresses[i][1]) {
+          if (rx.getData()[0] > volumes[i]) {
+            volumes[i] = rx.getData()[0];
+          }
         }
       }
-      if (msb == exteriorAddress[0] && lsb == exteriorAddress[1]) {
+      if (msb == exteriorMoteAddress[0] && lsb == exteriorMoteAddress[1]) {
         for (int i = 0; i < numberOfExteriorMics; i++) {
-          int j = i + numberOfInteriorFios; // Exterior volumes begin after the interior volumes. Offset 'j' accordingly.
-          volumes[j] = rx.getData()[i];
+          // Exterior volumes begin after the interior volumes. Offset accordingly.
+          int nodeIndex = i + numberOfInteriorMotes;
+          if (rx.getData()[i] > volumes[nodeIndex]) {
+            volumes[nodeIndex] = rx.getData()[i];
+          }
         }
       }
 
