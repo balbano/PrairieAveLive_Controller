@@ -35,6 +35,7 @@ void getXBeeDataAndSet(int volumes[])
           if (rx.getData()[0] > volumes[i]) {
             volumes[i] = rx.getData()[0];
           }
+          numberOfPacketsByMote[i]++;
         }
       }
       if (msb == exteriorMoteAddress[0] && lsb == exteriorMoteAddress[1]) {
@@ -45,6 +46,7 @@ void getXBeeDataAndSet(int volumes[])
             volumes[nodeIndex] = rx.getData()[i];
           }
         }
+        numberOfPacketsByMote[numberOfInteriorMotes]++;
       }
 
       // radioFPS = 1000.0 / (millis() - previousPacketTime);

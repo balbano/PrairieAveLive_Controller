@@ -89,6 +89,7 @@ unsigned long prevReportTime;
 int numberOfPacketsRead = 0;
 int numberOfErrors = 0;
 int numberOfAttemptsToReadEmptyBuffer = 0;
+int numberOfPacketsByMote[numberOfInteriorMotes + 1];
 
 void setup() {
   leds.begin();
@@ -99,9 +100,6 @@ void setup() {
   Serial1.begin(9600);
   xbee.setSerial(Serial1);
   
-  //randomSeed(analogRead(0));
-  //initializeWithRandomColors(panel);
-  
   previousFrameTime = millis();
   prevReportTime = millis();
   
@@ -109,6 +107,10 @@ void setup() {
   
   for (int i = 0; i < numberOfNodes; i++) {
     maxVolumes[i] = 0;
+  }
+  
+  for (int i = 0; i < numberOfNodes + 1; i++) {
+    numberOfPacketsByMote[i] = 0;
   }
 }
 
@@ -123,7 +125,6 @@ void loop() {
     for (int i = 0; i < numberOfNodes; i++) {
       levels[i] = float(maxVolumes[i]);
     }
-    // killAllCells(panel);
     birthCellsFromAudio(panel, levels, nodeCoordinates, nodeColors, audioScalingFactors, numberOfNodes);
     setAllPixels(panel);
     leds.show();
@@ -141,8 +142,35 @@ void loop() {
     Serial.print(numberOfErrors);
     Serial.print("; Attempts to read empty buffer: ");
     Serial.println(numberOfAttemptsToReadEmptyBuffer);
+
+    for(int i = 0; i < numberOfInteriorMotes; i++){
+      Serial.print(interiorMoteAddresses[i][0], HEX);
+      Serial.print(", ");
+      Serial.print(interiorMoteAddresses[i][1], HEX);
+      Serial.print(": ");
+      Serial.println(numberOfPacketsByMote[i]);
+    }
+    Serial.print(exteriorMoteAddress[0], HEX);
+    Serial.print(", ");
+    Serial.print(exteriorMoteAddress[1], HEX);
+    Serial.print(": ");
+    Serial.println(numberOfPacketsByMote[numberOfInteriorMotes]);
+    Serial.println();
+    
     numberOfPacketsRead = 0;
     numberOfErrors = 0;
     numberOfAttemptsToReadEmptyBuffer = 0;
+    for (int i = 0; i < numberOfNodes + 1; i++) {
+      numberOfPacketsByMote[i] = 0;
+    }
+  }
+}
+
+void setAllPixels(int cells[STRIPS_PER_PANEL][LEDS_PER_STRIP])
+{
+  for (int y = 0; y < STRIPS_PER_PANEL; y++){
+    for(int x = 0; x < LEDS_PER_STRIP; x++){
+      leds.setPixel(y*LEDS_PER_STRIP + x, cells[y][x]);
+    }
   }
 }

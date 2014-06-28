@@ -1,4 +1,3 @@
-
 void iterateGameOfLife(int cells[STRIPS_PER_PANEL][LEDS_PER_STRIP], int cellsBuffer[STRIPS_PER_PANEL][LEDS_PER_STRIP])
 {
   // Load the current array of cells into the buffer.
