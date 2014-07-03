@@ -1,7 +1,6 @@
 void getXBeeDataAndSet(int volumes[])
-{
-  xbee.readPacket();
-  if (xbee.getResponse().isAvailable()) {
+{ 
+  if (xbee.readPacket(45)) {
     numberOfPacketsRead++; // Count the packets read each frame.
     // got something
 

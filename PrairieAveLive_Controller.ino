@@ -96,8 +96,8 @@ void setup() {
   leds.show();
   
   // start serial
-  Serial.begin(9600);
-  Serial1.begin(9600);
+  Serial.begin(57600);
+  Serial1.begin(57600);
   xbee.setSerial(Serial1);
   
   previousFrameTime = millis();
@@ -115,7 +115,18 @@ void setup() {
 }
 
 void loop() {
+  uint8_t payload[] = {0xFF};
+  // Pull data from interior motes.
+  for (int i; i < numberOfInteriorMotes; i++) {
+    XBeeAddress64 addr64 = XBeeAddress64(interiorMoteAddresses[i][0], interiorMoteAddresses[i][1]);
+    ZBTxRequest zbTx = ZBTxRequest(addr64, payload, sizeof(payload));
+    getXBeeDataAndSet(maxVolumes);
+  }
+  //Pull data from exterior mote.
+  XBeeAddress64 addr64 = XBeeAddress64(exteriorMoteAddress[0], exteriorMoteAddress[1]);
+  ZBTxRequest zbTx = ZBTxRequest(addr64, payload, sizeof(payload));
   getXBeeDataAndSet(maxVolumes);
+  
   // Serial.print("Max volume:");
   // Serial.println(maxVolume);
   if ((millis() - previousFrameTime) > frameLength){
