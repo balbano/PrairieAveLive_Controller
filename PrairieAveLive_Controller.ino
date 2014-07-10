@@ -63,12 +63,12 @@ ZBRxResponse rx = ZBRxResponse();
 ModemStatusResponse msr = ModemStatusResponse();
 
 // Audio mote setup 
-const int numberOfInteriorMotes = 3; // Each interior mote has 1 mic.
-const int numberOfExteriorMics = 2; // The single exterior mote has many mics.
+const int numberOfInteriorMotes = 6; // Each interior mote has 1 mic.
+const int numberOfExteriorMics = 3; // The single exterior mote has many mics.
 const int numberOfNodes = numberOfInteriorMotes + numberOfExteriorMics;
 
 const int moteAddr64Msb = 0x13A200;
-const int interiorMoteAddr64Lsbs[] = {0x40ACB022, 0x40AE998C, 0x40B79908};
+const int interiorMoteAddr64Lsbs[] = {0x40ACB022, 0x40AE998C, 0x40B79908, 0x40AF4F15, 0x40B09D41, 0x40B799B6};
 const int exteriorMoteAddr64Lsb = 0x40ACB3EC;
 uint16_t interiorMoteAddr16s[numberOfInteriorMotes];
 uint16_t exteriorMoteAddr16;
@@ -79,6 +79,9 @@ const int samplesPerExteriorTx = numberOfExteriorMics*2;
 int interiorMoteData[numberOfInteriorMotes][samplesPerInteriorTx];
 int exteriorMoteData[samplesPerExteriorTx];
 
+// Precompute distances.
+float distanceToNode[numberOfNodes][STRIPS_PER_PANEL][LEDS_PER_STRIP];
+
 // Mote data position counters.
 int interiorMoteCounter = 0;
 unsigned long previousPullTime;
@@ -87,11 +90,11 @@ const int frameLength = 100; // 10 FPS.
 // The node coords for the interior mics match the indexing of the interior
 // mote addresses. The node coords of the exterior mics are offset by the
 // number of interior motes.
-//                           |Interior Motes/Mics           |Exterior Mics       |
-//                           |------------------------------|--------------------|
-int nodeCoordinates[][2]    = {{2, 4},   {2, 11},  {4, 4},   {2, 21},  {2, 30}};
-int nodeColors[]            = {0xFF00FF, 0x00FFFF, 0x00FF00, 0xFFFF00, 0x00FF00};
-float audioScalingFactors[] = {2.,       2.,       2.,       2.,       2.};
+//                           |Interior Motes/Mics                                         |Exterior Mics                 |
+//                           |------------------------------------------------------------|------------------------------|
+int nodeCoordinates[][2]    = {{2, 3},   {1, 7},   {2, 14},  {1, 18},  {2, 25},  {1, 29},  {6, 5},   {6, 16},  {6, 27} };
+int nodeColors[]            = {0xFF0000, 0x00FF00, 0x0000FF, 0xFFFF00, 0x00FFFF, 0xFF00FF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF};
+float audioScalingFactors[] = {2.,       2.,       2.,       2.,       2.,       2.,       2.,       2.,       2.      };
 
 int dataForCurrentFrame[numberOfNodes];
 float levels[numberOfNodes];
@@ -124,13 +127,13 @@ void setup() {
   // Set defaults.
   for (int i = 0; i < numberOfNodes; i++) {
     dataForCurrentFrame[i] = 0;
-    interiorMoteAddr16s[i] = 0xFFFE;
   }
 
   for (int i = 0; i < numberOfInteriorMotes; i++) {
     for (int j = 0; j < samplesPerInteriorTx; j++) {
       interiorMoteData[i][j] = 0;
     }
+    interiorMoteAddr16s[i] = 0xFFFE;
   }
 
   for (int i = 0; i < samplesPerExteriorTx; i++) {
@@ -199,7 +202,11 @@ void advanceFrame() {
     levels[i] = float(dataForCurrentFrame[i]);
   }
 
+  unsigned long prev = millis();
   birthCellsFromAudio(panel, levels, nodeCoordinates, nodeColors, audioScalingFactors, numberOfNodes);
+  int birthCellsTime = millis() - prev;
+  Serial.print("Birthing cells from audio took: ");
+  Serial.println(birthCellsTime);
 
   setAllPixels(panel);
   leds.show();
