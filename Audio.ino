@@ -1,3 +1,13 @@
+void setCurrentData(int intDataPos, int extDataPos) {
+  for (int i = 0; i < numberOfInteriorMotes; i++) {
+    int dataIndex = (numberOfInteriorMotes - i + intDataPos) % numberOfInteriorMotes;
+    dataForCurrentFrame[i] = interiorMoteData[i][dataIndex];
+  }
+  for (int i = 0; i < numberOfExteriorMics; i++) {
+    dataForCurrentFrame[i + numberOfInteriorMotes] = exteriorMoteData[i + extDataPos];
+  }
+}
+
 void birthCellsFromAudio(int cells[STRIPS_PER_PANEL][LEDS_PER_STRIP], float levels[], int nodes[][2], int colors[], float scalingFactors[], int nodesLength) {
   for (int y = 0; y < STRIPS_PER_PANEL; y++){
     for (int x = 0; x < LEDS_PER_STRIP; x++){
