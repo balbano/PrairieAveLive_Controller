@@ -146,6 +146,8 @@ void setup() {
     numberOfPacketsByMote[i] = 0;
   }
 
+  precomputeDistances();
+
   // Timers
   previousReportTime = millis();
   previousPullTime = millis();
