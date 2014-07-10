@@ -1,12 +1,11 @@
 void lookForData() {
-  while (millis() - previousPullTime < 100) {
+  while (millis() - previousPullTime < frameLength) {
     getData();
   } 
 
   previousPullTime = millis();
 }
 
-// TODO SOMETHING IN GETDATA IS BREAKING EVERYTHING.
 void getData()
 { 
   xbee.readPacket();
@@ -22,12 +21,13 @@ void getData()
       int msb = rx.getRemoteAddress64().getMsb();
       int lsb = rx.getRemoteAddress64().getLsb();
 
-      // getData() and getDataLength() break eveything... no idea why. Use
+      // XXX: getData() and getDataLength() break eveything... no idea why. Use
       // getDataOffset(), getFrameDataLength() and getFrameData() instead.
       uint8_t frameLength = rx.getFrameDataLength();
       uint8_t dataOffset = rx.getDataOffset();
       uint8_t dataLength = frameLength - dataOffset;
 
+      /*
       Serial.print("Remote Address MSB: ");
       Serial.println(msb, HEX);
       Serial.print("Remote Address lSB: ");
@@ -45,28 +45,27 @@ void getData()
 
       Serial.println();
       Serial.println();
+      */
 
+      // Check to see if the address corresponds to an interior mote and if the
+      // data is the correct length.
       for (int moteIndex = 0; moteIndex < numberOfInteriorMotes; moteIndex++) {
-        if ((msb == moteAddr64Msb && lsb == interiorMoteAddr64Lsbs[moteIndex]) &&
-            dataLength == (samplesPerInteriorTx))
-        {
+        if ((msb == moteAddr64Msb && lsb == interiorMoteAddr64Lsbs[moteIndex]) && dataLength == (samplesPerInteriorTx)) {
           for (int i = 0; i < dataLength; i++) {
             interiorMoteData[moteIndex][i] = rx.getFrameData()[i + dataOffset];
           }
-
           numberOfPacketsByMote[moteIndex]++;
         }
       }
 
-      if ((msb == moteAddr64Msb  && lsb == exteriorMoteAddr64Lsb) &&
-          dataLength == (samplesPerExteriorTx))
-      {
+      // Check to see if the address corresponds to the exterior mote and if
+      // the data is the correct length.
+      if ((msb == moteAddr64Msb  && lsb == exteriorMoteAddr64Lsb) && dataLength == (samplesPerExteriorTx)) {
         for (int i = 0; i < dataLength; i++) {
           exteriorMoteData[i] = rx.getFrameData()[i + dataOffset];
         }
         numberOfPacketsByMote[numberOfInteriorMotes]++;
       }
-
     }
   } 
   else if (xbee.getResponse().isError()) {

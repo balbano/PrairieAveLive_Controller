@@ -55,7 +55,6 @@ XBee xbee = XBee();
 XBeeAddress64 addr64 = XBeeAddress64(0x13A200, 0x40B79908);
 uint8_t payload[] = {255};
 ZBTxRequest zbTx = ZBTxRequest(addr64, payload, sizeof(payload)); // Set addr before sending.
-
 ZBTxStatusResponse txStatus = ZBTxStatusResponse();
 
 // Rx
@@ -83,6 +82,7 @@ int exteriorMoteData[samplesPerExteriorTx];
 // Mote data position counters.
 int interiorMoteCounter = 0;
 unsigned long previousPullTime;
+const int frameLength = 100; // 10 FPS.
 
 // The node coords for the interior mics match the indexing of the interior
 // mote addresses. The node coords of the exterior mics are offset by the
@@ -96,10 +96,6 @@ float audioScalingFactors[] = {2.,       2.,       2.,       2.,       2.};
 int dataForCurrentFrame[numberOfNodes];
 float levels[numberOfNodes];
 
-// Framerate setup
-const float FPS = 12;
-const float frameLength = 1000 / FPS;
-unsigned long previousFrameTime;
 
 // REPORTING
 const int timeBetweenReports = 5000; // Report once per 5 seconds.
@@ -148,7 +144,6 @@ void setup() {
   }
 
   // Timers
-  previousFrameTime = millis();
   previousReportTime = millis();
   previousPullTime = millis();
 }
@@ -161,55 +156,31 @@ void loop() {
   // time of sampling by the number of sample per Tx times the length of a
   // frame.
 
+  // INTERIOR PULL
+  // -------------
   // Pull data from interior motes.
   addr64 = XBeeAddress64(moteAddr64Msb, interiorMoteAddr64Lsbs[interiorMoteCounter]);
   zbTx.setAddress64(addr64);
-
-//  Serial.print("Sending ");
-//  Serial.print(zbTx.getPayload()[0]);
-//  Serial.print(" to: ");
-//  Serial.print(zbTx.getAddress64().getMsb(), HEX);
-//  Serial.print(", ");
-//  Serial.println(zbTx.getAddress64().getLsb(), HEX);
-
   xbee.send(zbTx);
-  lookForData();
+  lookForData(); // Looks for data for 100 millis.
 
   // Set the data for the current frame and iterate.
   int interiorMoteDataPosition = interiorMoteCounter * 2; // There are twice as many samples as motes.
   int exteriorMoteDataPosition = numberOfExteriorMics; // Use the second set of data.
-
-  // Serial.print("interiorMoteDataPosition: ");
-  // Serial.print(interiorMoteDataPosition);
-  // Serial.print(", exteriorMoteDataPosition: ");
-  // Serial.println(exteriorMoteDataPosition);
-
   setCurrentData(interiorMoteDataPosition, exteriorMoteDataPosition); 
   advanceFrame();
 
+  // EXTERIOR PULL
+  // -------------
   // Pull data from exterior mote.
   addr64 = XBeeAddress64(moteAddr64Msb, exteriorMoteAddr64Lsb);
   zbTx.setAddress64(addr64);
-
-//  Serial.print("Sending ");
-//  Serial.print(zbTx.getPayload()[0]);
-//  Serial.print(" to: ");
-//  Serial.print(zbTx.getAddress64().getMsb(), HEX);
-//  Serial.print(", ");
-//  Serial.println(zbTx.getAddress64().getLsb(), HEX);
-
   xbee.send(zbTx);
-  lookForData();
+  lookForData(); // Looks for data for 100 millis.
 
   // Set the data for the current frame and iterate.
   interiorMoteDataPosition++; // Use the next sample.
   exteriorMoteDataPosition = 0; // Use the first set of data.
-  
-  // Serial.print("interiorMoteDataPosition: ");
-  // Serial.print(interiorMoteDataPosition);
-  // Serial.print(", exteriorMoteDataPosition: ");
-  // Serial.println(exteriorMoteDataPosition);
-
   setCurrentData(interiorMoteDataPosition, exteriorMoteDataPosition); 
   advanceFrame();
 
@@ -222,23 +193,13 @@ void loop() {
 }
 
 void advanceFrame() {
-  previousFrameTime = millis();
-      
   iterateGameOfLife(panel, panelBuffer);
-
-  // Serial.print("Levels: ");
 
   for (int i = 0; i < numberOfNodes; i++) {
     levels[i] = float(dataForCurrentFrame[i]);
-    // Serial.print(levels[i]);
-    // Serial.print(", ");
   }
 
-  // Serial.println();
-  // Serial.println();
-
-  birthCellsFromAudio(panel, levels, nodeCoordinates, nodeColors,
-                      audioScalingFactors, numberOfNodes);
+  birthCellsFromAudio(panel, levels, nodeCoordinates, nodeColors, audioScalingFactors, numberOfNodes);
 
   setAllPixels(panel);
   leds.show();
